@@ -1,0 +1,15 @@
+{
+  "name": "dctrl-bitcoin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "zeromq": "^4.4.1",
+    "zmq": "^2.15.3"
+  }
+}
