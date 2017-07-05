@@ -14,25 +14,12 @@ function watchAddress(address, callback){
         'importaddress',
         address,
         'test',
-        true,
+        false,
         (err, balance, resHeaders)=>{
             if (err) return callback(err);
             console.log({balance})
             callback(null)
     })
-}
-
-
-function initializeRescan(callback){
-    // client.cmd(
-    //     'importaddress',
-    //     '35qn9wBprnrWkbtzTikcF454uMte2trWR2',
-    //     'test',
-    //     true,
-    //     (err, balance, resHeaders)=>{
-    //         if (err) return callback(err);
-    //         callback(null)
-    // })
 }
 
 function getBalance(address, callback){
@@ -45,9 +32,12 @@ function getBalance(address, callback){
             callback(null, balance)
     })
 }
+// 
+// getBalance('n2ywqjRRTdb9pfmRkDjag96TozUhBgvwww', (err, balance)=> {
+//     console.log({balance})
+// })
 
 module.exports = {
     getBalance,
     watchAddress,
-    initializeRescan,
 }
