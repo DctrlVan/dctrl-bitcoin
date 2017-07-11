@@ -3,28 +3,53 @@ const config = require('./config')
 const crypto = require('crypto');
 const request = require('superagent')
 
-// Step 1 - Create a payload consisting of “timestamp.public_key”:
-const msSince1970 = Date.now()
-const unixTime = (Date.now() / 1000).toFixed(0)
-const step1 = unixTime +'.'+ config.bitcoinAverage.pub
 
-// Step 2 - The payload needs to be HMAC encrypted with the sha256 algorithm
-// using your API secret key that corresponds to the given public key in the
-// payload. This result is called a ‘digest_value’ and needs to be in hex
-const hmac = crypto.createHmac('sha256', config.bitcoinAverage.secret)
-hmac.update(step1);
-const step2 = hmac.digest('hex')
+function createBitcoinAverageSignature(){
+    // Step 1 - Create a payload consisting of “timestamp.public_key”:
+    const msSince1970 = Date.now()
+    const unixTime = (Date.now() / 1000).toFixed(0)
+    const step1 = unixTime +'.'+ config.bitcoinAverage.pub
 
-// Step 3 - Finally we can compose the value that needs to be used in the
-// X-signature header. It’s contents need to be in the format:
-// timestamp.public_key.digest_value (step1 cat step2)
+    // Step 2 - The payload needs to be HMAC encrypted with the sha256 algorithm
+    // using your API secret key that corresponds to the given public key in the
+    // payload. This result is called a ‘digest_value’ and needs to be in hex
+    const hmac = crypto.createHmac('sha256', config.bitcoinAverage.secret)
+    hmac.update(step1);
+    const step2 = hmac.digest('hex')
 
-request
-    .get('https://apiv2.bitcoinaverage.com/indices/global/ticker/BTCCAD')
-    .set('X-signature', step1 + step2)
-    .end((err, res)=> {
-        console.log(res.body)
-    })
+    // Step 3 - Finally we can compose the value that needs to be used in the
+    // X-signature header. It’s contents need to be in the format:
+    // timestamp.public_key.digest_value (step1 cat step2)
+    return step1 + step2
+}
+
+// Use these to throttle requests
+var currentCadPrice = false
+function resetCadPrice(){
+    currentCadPrice = false
+}
+
+function getCadPrice(callback){
+    if (!currentCadPrice){
+        request
+            .get('https://apiv2.bitcoinaverage.com/indices/global/ticker/BTCCAD')
+            .set('X-signature', createBitcoinAverageSignature())
+            .end((err, res)=> {
+              if (err) return callback(err);
+                  currentCadPrice = res.body.last
+                  callback(null, currentCadPrice)
+                  setTimeout(resetCadPrice , 30000)
+            })
+    } else {
+        console.log('req throttled using', {currentCadPrice})
+        callback(null, currentCadPrice)
+    }
+}
+
+module.exports = {
+    getCadPrice,
+}
+
 // success: {
 // ask: 3080.86,
 // bid: 3076.03,

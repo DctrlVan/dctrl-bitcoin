@@ -2,10 +2,12 @@ const config = require('./config')
 const request = require('superagent')
 const bitcoindZmq = require('./bitcoindZmq')
 const bitcoindRpc = require('./bitcoindRpc')
+const price = require('./price')
 
 const currentAccounts = require('./currentAccounts')
 
 // check on new blocks
+
 bitcoindZmq.hashblockStream.onValue( checkForPayments )
 // bitcoindZmq.rawtxStream.log('test')
 
@@ -21,15 +23,21 @@ function checkForPayments(){
             if (err) return console.log('getbalance response:', err);
 
             if (currentAccounts[addr] !== balance){
-                let now = parseFloat(balance)
-                let before = parseFloat(currentAccounts[addr])
+                // update the state of this address
+                let balanceNow = parseFloat(balance)
+                let balanceInitial = parseFloat(currentAccounts[addr])
+                currentAccounts[addr] = balance // really need to stop address reuse...
 
-                let amount = now - before
-                console.log({now, before, amount})
-                currentAccounts[addr] = balance
-                console.log('payment received!', {amount})
-                recordPayment(amount, addr)
+                // do not think this is safe math but converting to cad
+                let btcAmount = balanceNow - balanceInitial
 
+                calculateCadAmount(btcAmount, (err, cadAmount)=>{
+                    if (err){
+                        return console.log('unable to get price should retry')
+                    }
+                    console.log({btcAmount, cadAmount})
+                    recordPayment(cadAmount, addr)
+                })
             } else {
                 console.log('no change')
             }
@@ -38,15 +46,22 @@ function checkForPayments(){
     }
 }
 
+function calculateCadAmount(btcAmount, callback){
+    price.getCadPrice((err, lastPriceCadBtc)=> {
+          // retry code maybe
+          let cadAmount = btcAmount * lastPriceCadBtc
+          callback(err, cadAmount)
+    })
+}
+
 function recordPayment(amount, address){
-    console.log(amount, address)
     request
         .post(config.brainLocation + 'members')
         .send({
             action: {
                 type: "member-paid",
                 address,
-                amount: amount.toString(),
+                amount,
                 "cash?": false,
                 notes: "bitcoind"
             }

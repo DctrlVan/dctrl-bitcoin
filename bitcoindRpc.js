@@ -13,11 +13,8 @@ function watchAddress(address, callback){
     client.cmd(
         'importaddress',
         address,
-        'test',
-        false,
-        (err, balance, resHeaders)=>{
+        (err, res, resHeaders)=>{
             if (err) return callback(err);
-            console.log({balance})
             callback(null)
     })
 }
@@ -32,7 +29,7 @@ function getBalance(address, callback){
             callback(null, balance)
     })
 }
-// 
+//
 // getBalance('n2ywqjRRTdb9pfmRkDjag96TozUhBgvwww', (err, balance)=> {
 //     console.log({balance})
 // })

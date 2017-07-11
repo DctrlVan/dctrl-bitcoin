@@ -14,16 +14,15 @@ function initializeWatchedAddresses(){
             if (err || res.body.err){
                 return console.log('unable to get members, braindead')
             }
-            res.body.forEach( member => checkInitial(member.address) )
+            res.body.forEach( member => initializeWatch(member.address) )
         })
 }
 
-
-function checkInitial(address){
+function initializeWatch(address){
     if (!address) return console.log('address required')
     bitcoindRpc.getBalance(address, (err, balance)=> {
-        if (err) return console.log('getbalance response:', err);
-        console.log('', address, balance)
+        if (err) return console.log('getbalance:', err);
+        console.log('getbalance:', {address, balance})
         currentAccounts[address] = balance
     })
 }
@@ -31,4 +30,8 @@ function checkInitial(address){
 // checkInitial('n2ywqjRRTdb9pfmRkDjag96TozUhBgvwww')
 initializeWatchedAddresses()
 
-module.exports = currentAccounts
+module.exports = {
+    currentAccounts,
+    initializeWatch,
+    initializeWatchedAddresses
+  }
